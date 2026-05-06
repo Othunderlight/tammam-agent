@@ -1,0 +1,28 @@
+services:
+  fastai:
+    build: .
+    container_name: founderstack-crm-fastai
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - JWT_PRIVATE_KEY_PATH=/app/jwt_private_key.pem
+      - JWT_PUBLIC_KEY_PATH=/app/jwt_public_key.pem
+      - WHATSAPP_SESSION_DB=/app/neonize.db
+      - INNGEST_EVENT_KEY=${INNGEST_EVENT_KEY}
+      - INNGEST_SIGNING_KEY=${INNGEST_SIGNING_KEY}
+    volumes:
+      - .:/app
+      - ./jwt_private_key.pem:/app/jwt_private_key.pem:ro
+      - ./jwt_public_key.pem:/app/jwt_public_key.pem:ro
+      - ./logs:/app/logs
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
