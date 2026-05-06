@@ -1,0 +1,23 @@
+fastapi
+uvicorn[standard]
+PyJWT[crypto]
+httpx
+python-dotenv
+pydantic
+pydantic-settings
+cryptography
+inngest
+google-genai
+python-dotenv
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+python-telegram-bot==22.6
+neonize
+python-magic; sys_platform != 'win32'
+python-magic-bin; sys_platform == 'win32'
+
+google-adk[all]
+litellm==1.82.6
+chatgpt_md_converter
+pydub
