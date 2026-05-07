@@ -17,6 +17,91 @@
 
 FastAPI-based AI Agent.
 
+## Architecture
+### better view at [Internal Architecture](https://excalidraw.com/#json=llFQW2Bbe6RDigLRtEjLs,r9AM4xQh2s8xDBMaNpU8iA)
+
+```mermaid
+graph TD
+    subgraph "Channels (Integrations)"
+        Telegram[Telegram Bot]
+        WhatsApp[WhatsApp Business]
+    end
+
+    subgraph "Entry Layer (FastAPI)"
+        FastAPI[main.py]
+        Auth[auth.py]
+    end
+
+    subgraph "Orchestration Layer (AI Runs)"
+        Handler[Integration Handler]
+        Session[Session Manager]
+        Action[One Action Runner]
+        Stop[Stop Registry]
+    end
+
+    subgraph "AI Workflow (Google ADK)"
+        Agent[Tool Agent]
+        Renderer[Prompt Renderer]
+        SystemMsg[prompt.md]
+    end
+
+    subgraph "Tools & Data"
+        CRMContext[CRM Context API]
+        Prefs[User Preferences]
+        MCP[MCP Servers / mncpo]
+        Legacy[Legacy CRM Tools]
+    end
+
+    subgraph "External & Background"
+        Backend[Django CRM Backend]
+        Inngest[Inngest - Cloud Celery]
+        Email[Email Service]
+    end
+
+    %% Flow
+    Telegram & WhatsApp --> FastAPI
+    FastAPI --> Auth
+    Auth --> Handler
+    Handler --> Session
+    Handler --> Action
+    Action --> Stop
+    Action --> Agent
+    Agent --> Renderer
+    Renderer --> SystemMsg
+    Renderer --> CRMContext & Prefs
+    Agent --> MCP & Legacy
+    
+    CRMContext & Prefs & Legacy --> Backend
+    FastAPI --> Inngest
+    Inngest --> Email
+```
+
+## User Journey & Authentication Flow
+### better view at [User Architecture](https://excalidraw.com/#json=BF2gvYOmrXZPqkqE5X-eH,IyQSIdVK6b5X6u8uowP-gA)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User (Telegram/WhatsApp)
+    participant I as Integration Webhook
+    participant B as Django Backend
+    participant A as Tammam AI Agent
+
+    U->>I: Sends Message
+    I->>I: Extract Chat ID / User ID
+    I->>B: Request Credentials (chat_id)
+    B-->>I: Return user credentials (if exists)
+
+    alt User Recognized
+        I->>I: Mark Session Authenticated
+        I->>A: Forward message to AI Orchestrator
+        A->>A: Fetch CRM Context & Prefs
+        A-->>U: Send AI Response
+    else User Not Recognized
+        I-->>U: Send Unauthorized Message + Chat ID
+        Note over U,I: User copies Chat ID to Tammam UI to configure integration
+    end
+```
+
 ## Why Tammam AI?
 
 This service was created to bridge the gap between advanced AI agents and multi-user CRM environments. 
