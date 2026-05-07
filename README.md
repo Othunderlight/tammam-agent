@@ -1,5 +1,20 @@
 # Tammam AI Service
 
+<p align="center">
+  <a href="https://tammam.founderstack.cloud/"><b>Website</b></a> •
+  <a href="https://t.me/TammamAgent"><b>Telegram Community</b></a>
+</p>
+
+<p align="center">
+  <a href="https://t.me/TammamAgent">
+    <img src="https://img.shields.io/badge/Telegram-Join%20Community-blue?style=for-the-badge&logo=telegram" alt="Telegram">
+  </a>
+  <a href="https://tammam.founderstack.cloud/">
+    <img src="https://img.shields.io/badge/Website-Live-green?style=for-the-badge" alt="Website">
+  </a>
+  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge" alt="License">
+</p>
+
 FastAPI-based AI Agent.
 
 ## Why Tammam AI?
