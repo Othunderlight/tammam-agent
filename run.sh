@@ -15,4 +15,4 @@ curl -s -F "url=https://unexpendable-unresponsively-tawana.ngrok-free.dev/webhoo
 - uv run python integrations/telegram/set_webhook.py
 export PYTHONPATH=$PYTHONPATH:. && adk run ai/workflows/g_adk/tool_agent
 
-export PYTHONPATH=$PYTHONPATH:. && adk web ai/workflows/g_adk/
+export PYTHONPATH=$PYTHONPATH:. && adk web ai/workflows/g_adk/ --port 8001

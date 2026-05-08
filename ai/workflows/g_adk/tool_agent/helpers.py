@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 _root_dir = Path(__file__).parent
 BASE_INSTRUCTION = (_root_dir / "prompt.md").read_text()
+CRM_SKILL_TEMPLATE = (_root_dir / "skills" / "crm_toolkit" / "SKILL.md").read_text()
 
 
 def _get_crm_replacements(crm_config: Dict[str, Any]) -> Dict[str, str]:
@@ -66,13 +67,12 @@ def _get_crm_replacements(crm_config: Dict[str, Any]) -> Dict[str, str]:
                 type_choices.append(name)
 
     if type_choices:
-        replacements["{{ interaction_type_choices }}"] = (
-            "\n      -- " + "\n      -- ".join(type_choices)
+        replacements["{{ interaction_type_choices }}"] = "- " + "\n- ".join(
+            type_choices
         )
     else:
         replacements["{{ interaction_type_choices }}"] = (
-            "Please ask the user what to add as an interaction type because there is none configured, "
-            "use the create_interaction_type tool when the user wants to add one."
+            "- Ask user to define one and use create_interaction_type."
         )
 
     return replacements
@@ -85,7 +85,12 @@ def _get_identity_replacements(
     Extract and format user preference-related placeholders.
     """
     preferences = user_preferences or {}
-    style = preferences.get("user_prefrence", "")
+    # Use desired_communication_style as in the teammate's diff
+    style = preferences.get("desired_communication_style")
+    if not style:
+        # Fallback to the old key just in case
+        style = preferences.get("user_prefrence", "")
+
     if isinstance(style, str):
         style = style.strip()
     else:
@@ -94,7 +99,7 @@ def _get_identity_replacements(
     if not style:
         style = "No additional communication-style preference was provided. Follow the default style rules above."
 
-    return {"{{user_prefrence}}": style}
+    return {"{{desired_communication_style}}": style}
 
 
 def _get_system_replacements() -> Dict[str, str]:
@@ -126,4 +131,13 @@ def render_instruction(
     for placeholder, value in replacements.items():
         instruction = instruction.replace(placeholder, value)
 
+    return instruction
+
+
+def render_crm_skill_instruction(crm_config: Dict[str, Any]) -> str:
+    """Render CRM skill instructions from template placeholders."""
+    replacements = _get_crm_replacements(crm_config)
+    instruction = CRM_SKILL_TEMPLATE
+    for placeholder, value in replacements.items():
+        instruction = instruction.replace(placeholder, value)
     return instruction

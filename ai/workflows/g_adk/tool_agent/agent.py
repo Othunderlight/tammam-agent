@@ -1,19 +1,22 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from ai.runs.stop_registry import is_stop_requested
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import Gemini, LlmRequest, LlmResponse
+from google.adk.skills import models
 
 # from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
 
-from .helpers import render_instruction
+from ai.runs.stop_registry import is_stop_requested
+
+from .helpers import render_crm_skill_instruction, render_instruction
 
 # model = LiteLlm(
 #     model="openrouter/deepseek/deepseek-v3.2",  # old is groq/moonshotai/kimi-k2-instruct
@@ -200,6 +203,17 @@ class SafeMcpToolset(McpToolset):
         return [SafeMcpTool(tool) for tool in tools]
 
 
+def _build_crm_skill(crm_config: Dict[str, Any]) -> models.Skill:
+    return models.Skill(
+        frontmatter=models.Frontmatter(
+            name="crm-toolkit",
+            description="CRM schemas, workflow rules, and tool usage constraints.",
+            metadata={"adk_additional_tools": ["search_tools", "call_tool"]},
+        ),
+        instructions=render_crm_skill_instruction(crm_config),
+    )
+
+
 def create_agent(
     mcp_crm_api_key: str,
     crm_config: Dict[str, Any] = None,
@@ -209,6 +223,7 @@ def create_agent(
     Create an agent with the given CRM config.
 
     Args:
+        mcp_crm_api_key: API key for the CRM MCP server.
         crm_config: Dict with CRM-specific prompt context.
         user_preferences: Dict with user-specific prompt preferences.
 
@@ -220,6 +235,23 @@ def create_agent(
     instruction = render_instruction(config, preferences)
     # print(instruction)
 
+    # Instantiate MCP toolset
+    mcp_toolset = SafeMcpToolset(
+        connection_params=StreamableHTTPConnectionParams(
+            url=os.getenv("MCP_CRM_BASE_URL"),
+            headers={
+                "Api-Key": mcp_crm_api_key,
+                "Content-Type": "application/json",
+            },
+        )
+    )
+
+    # Initialize SkillToolset with CRM skill and MCP tools as additional tools
+    my_skill_toolset = SkillToolset(
+        skills=[_build_crm_skill(config)],
+        additional_tools=[mcp_toolset],
+    )
+
     return Agent(
         name="tool_agent",
         model=model,
@@ -228,23 +260,13 @@ def create_agent(
                 thinking_level=types.ThinkingLevel.MINIMAL,
             )
         ),
-        description="Tool agent",
+        description="A proactive CRM assistant that uses specialized skills to manage tasks.",
         # include_contents="none", now the agent can remeber throght the session
         # instruction="you are helpful assitant that reply only in 3 words max",
         instruction=instruction,
         before_model_callback=_stop_requested_callback,
         before_tool_callback=_stop_requested_before_tool,
-        tools=[
-            SafeMcpToolset(
-                connection_params=StreamableHTTPConnectionParams(
-                    url=os.getenv("MCP_CRM_BASE_URL"),
-                    headers={
-                        "Api-Key": mcp_crm_api_key,
-                        "Content-Type": "application/json",
-                    },
-                )
-            )
-        ],
+        tools=[my_skill_toolset],
     )
 
 
