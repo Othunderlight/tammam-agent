@@ -4,7 +4,9 @@ from typing import Any, Dict, List, Optional
 
 _root_dir = Path(__file__).parent
 BASE_INSTRUCTION = (_root_dir / "prompt.md").read_text()
-CRM_SKILL_TEMPLATE = (_root_dir / "skills" / "crm_toolkit" / "SKILL.md").read_text()
+FOUNDERSTACK_CRM_SKILL_TEMPLATE = (
+    _root_dir / "skills" / "founderstack-crm-toolkit" / "SKILL.md"
+).read_text()
 
 
 def _get_crm_replacements(crm_config: Dict[str, Any]) -> Dict[str, str]:
@@ -137,7 +139,7 @@ def render_instruction(
 def render_crm_skill_instruction(crm_config: Dict[str, Any]) -> str:
     """Render CRM skill instructions from template placeholders."""
     replacements = _get_crm_replacements(crm_config)
-    instruction = CRM_SKILL_TEMPLATE
+    instruction = FOUNDERSTACK_CRM_SKILL_TEMPLATE
     for placeholder, value in replacements.items():
         instruction = instruction.replace(placeholder, value)
     return instruction

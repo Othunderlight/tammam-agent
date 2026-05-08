@@ -206,8 +206,8 @@ class SafeMcpToolset(McpToolset):
 def _build_crm_skill(crm_config: Dict[str, Any]) -> models.Skill:
     return models.Skill(
         frontmatter=models.Frontmatter(
-            name="crm-toolkit",
-            description="CRM schemas, workflow rules, and tool usage constraints.",
+            name="founderstack-crm-toolkit",
+            description="FounderStack CRM schemas, workflow rules, and tool usage constraints.",
             metadata={"adk_additional_tools": ["search_tools", "call_tool"]},
         ),
         instructions=render_crm_skill_instruction(crm_config),

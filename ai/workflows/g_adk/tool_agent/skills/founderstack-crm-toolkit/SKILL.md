@@ -1,6 +1,6 @@
 ---
-name: crm-toolkit
-summary: CRM operation instructions, schemas, and workflow rules for TMM.
+name: founderstack-crm-toolkit
+summary: FounderStack CRM operation instructions, schemas, and workflow rules for TMM.
 metadata:
   adk_additional_tools:
     - search_tools
