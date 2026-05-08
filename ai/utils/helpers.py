@@ -87,20 +87,34 @@ def _get_identity_replacements(
     Extract and format user preference-related placeholders.
     """
     preferences = user_preferences or {}
-    style = preferences.get("")
-    if not style:
-        # Fallback to the old key just in case
-        style = preferences.get("user_prefrence", "")
 
-    if isinstance(style, str):
-        style = style.strip()
-    else:
-        style = ""
+    # Define the mapping of placeholders to their corresponding preference keys (checking both cases)
+    mapping = {
+        "{{IDENTITY}}": "IDENTITY",
+        "{{TOOL_GUIDANCE}}": "TOOL_GUIDANCE",
+        "{{USER_CUSTOM_SYSTEM_MESSAGE}}": "USER_CUSTOM_SYSTEM_MESSAGE",
+        "{{MEMORY_BLOCK}}": "MEMORY_BLOCK",
+        "{{USER_PROFILE_BLOCK}}": "USER_PROFILE_BLOCK",
+        "{{USER_PREFRENCE}}": "USER_PREFRENCE",
+    }
 
-    if not style:
-        style = "No additional communication-style preference was provided. Follow the default style rules above."
+    replacements = {}
+    for placeholder, key in mapping.items():
+        # Try uppercase first, then lowercase
+        value = preferences.get(key)
+        if value is None:
+            value = preferences.get(key.lower(), "")
 
-    return {"{{}}": style}
+        # Fallback for style/preference if empty
+        if not value and key == "USER_PREFRENCE":
+            value = "No additional communication-style preference was provided. Follow the default style rules above."
+
+        if isinstance(value, str):
+            replacements[placeholder] = value.strip()
+        else:
+            replacements[placeholder] = str(value) if value is not None else ""
+
+    return replacements
 
 
 def _get_system_replacements() -> Dict[str, str]:

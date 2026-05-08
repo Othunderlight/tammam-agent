@@ -232,7 +232,7 @@ def create_agent(
     config = crm_config or {}
     preferences = user_preferences or {}
     instruction = render_instruction(config, preferences)
-    # print(instruction)
+    print(instruction)
 
     # Instantiate MCP toolset
     mcp_toolset = SafeMcpToolset(
@@ -259,7 +259,7 @@ def create_agent(
                 thinking_level=types.ThinkingLevel.MINIMAL,
             )
         ),
-        description="A proactive CRM assistant that uses specialized skills to manage tasks.",
+        description="You are helpful, knowledgeable, and direct",
         # include_contents="none", now the agent can remeber throght the session
         # instruction="you are helpful assitant that reply only in 3 words max",
         instruction=instruction,
