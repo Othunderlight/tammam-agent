@@ -15,8 +15,7 @@ from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
 
 from ai.runs.stop_registry import is_stop_requested
-
-from .helpers import render_crm_skill_instruction, render_instruction
+from ai.utils.helpers import render_crm_skill_instruction, render_instruction
 
 # model = LiteLlm(
 #     model="openrouter/deepseek/deepseek-v3.2",  # old is groq/moonshotai/kimi-k2-instruct

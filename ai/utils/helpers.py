@@ -2,8 +2,8 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-_root_dir = Path(__file__).parent
-BASE_INSTRUCTION = (_root_dir / "prompt.md").read_text()
+_root_dir = Path(__file__).parent.parent
+BASE_INSTRUCTION = (_root_dir / "prompt_parts" / "prompt.md").read_text()
 FOUNDERSTACK_CRM_SKILL_TEMPLATE = (
     _root_dir / "skills" / "founderstack-crm-toolkit" / "SKILL.md"
 ).read_text()
