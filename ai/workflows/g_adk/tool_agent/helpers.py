@@ -1,6 +1,6 @@
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 _root_dir = Path(__file__).parent
 BASE_INSTRUCTION = (_root_dir / "prompt.md").read_text()
@@ -66,8 +66,8 @@ def _get_crm_replacements(crm_config: Dict[str, Any]) -> Dict[str, str]:
                 type_choices.append(name)
 
     if type_choices:
-        replacements["{{ interaction_type_choices }}"] = "\n      -- " + "\n      -- ".join(
-            type_choices
+        replacements["{{ interaction_type_choices }}"] = (
+            "\n      -- " + "\n      -- ".join(type_choices)
         )
     else:
         replacements["{{ interaction_type_choices }}"] = (
@@ -78,14 +78,14 @@ def _get_crm_replacements(crm_config: Dict[str, Any]) -> Dict[str, str]:
     return replacements
 
 
-def _get_user_preferences_replacements(
-    user_preferences: Optional[Dict[str, Any]]
+def _get_identity_replacements(
+    user_preferences: Optional[Dict[str, Any]],
 ) -> Dict[str, str]:
     """
     Extract and format user preference-related placeholders.
     """
     preferences = user_preferences or {}
-    style = preferences.get("desired_communication_style", "")
+    style = preferences.get("user_prefrence", "")
     if isinstance(style, str):
         style = style.strip()
     else:
@@ -94,7 +94,7 @@ def _get_user_preferences_replacements(
     if not style:
         style = "No additional communication-style preference was provided. Follow the default style rules above."
 
-    return {"{{desired_communication_style}}": style}
+    return {"{{user_prefrence}}": style}
 
 
 def _get_system_replacements() -> Dict[str, str]:
@@ -119,7 +119,7 @@ def render_instruction(
     """
     replacements = {}
     replacements.update(_get_crm_replacements(crm_config))
-    replacements.update(_get_user_preferences_replacements(user_preferences))
+    replacements.update(_get_identity_replacements(user_preferences))
     replacements.update(_get_system_replacements())
 
     instruction = BASE_INSTRUCTION

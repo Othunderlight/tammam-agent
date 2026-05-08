@@ -43,7 +43,7 @@ Structure:
 
 Important:
 This Particular User have this specifc Prefrence:
-{{desired_communication_style}}
+{{user_prefrence}}
 
 -----------------------------------
 TOOL USAGE
