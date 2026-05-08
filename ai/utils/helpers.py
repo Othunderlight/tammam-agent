@@ -87,8 +87,7 @@ def _get_identity_replacements(
     Extract and format user preference-related placeholders.
     """
     preferences = user_preferences or {}
-    # Use desired_communication_style as in the teammate's diff
-    style = preferences.get("desired_communication_style")
+    style = preferences.get("")
     if not style:
         # Fallback to the old key just in case
         style = preferences.get("user_prefrence", "")
@@ -101,7 +100,7 @@ def _get_identity_replacements(
     if not style:
         style = "No additional communication-style preference was provided. Follow the default style rules above."
 
-    return {"{{desired_communication_style}}": style}
+    return {"{{}}": style}
 
 
 def _get_system_replacements() -> Dict[str, str]:
