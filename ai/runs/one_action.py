@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 
 from ai.runs.stop_registry import register_active_run, unregister_active_run
-from ai.workflows.g_adk.tool_agent.agent import create_agent
+from ai.workflows.g_adk.manager.agent import create_agent
 from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService
 from google.genai import types

@@ -124,9 +124,7 @@ def _get_system_replacements() -> Dict[str, str]:
     return {"{{ today_date }}": date.today().strftime("%Y-%m-%d")}
 
 
-def render_instruction(
-    crm_config: Dict[str, Any], user_preferences: Optional[Dict[str, Any]] = None
-) -> str:
+def render_instruction(user_preferences: Optional[Dict[str, Any]] = None) -> str:
     """
     Render the instruction by replacing placeholders with context values.
 
@@ -138,7 +136,6 @@ def render_instruction(
         Instruction string with placeholders replaced
     """
     replacements = {}
-    replacements.update(_get_crm_replacements(crm_config))
     replacements.update(_get_identity_replacements(user_preferences))
     replacements.update(_get_system_replacements())
 
