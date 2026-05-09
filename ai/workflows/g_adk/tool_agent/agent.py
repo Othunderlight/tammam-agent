@@ -1,10 +1,12 @@
 import os
 from typing import Any, Dict, List, Optional
 
+from ai.runs.stop_registry import is_stop_requested
+from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import Gemini, LlmRequest, LlmResponse
-from google.adk.skills import models
+from google.adk.skills import load_skill_from_dir, models
 
 # from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools.base_tool import BaseTool
@@ -13,9 +15,6 @@ from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
 from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
-
-from ai.runs.stop_registry import is_stop_requested
-from ai.utils.helpers import render_crm_skill_instruction, render_instruction
 
 # model = LiteLlm(
 #     model="openrouter/deepseek/deepseek-v3.2",  # old is groq/moonshotai/kimi-k2-instruct
@@ -214,7 +213,7 @@ def _build_crm_skill(crm_config: Dict[str, Any]) -> models.Skill:
 
 
 def create_agent(
-    mcp_crm_api_key: str,
+    api_keys: Dict[str, str] = None,
     crm_config: Dict[str, Any] = None,
     user_preferences: Dict[str, Any] = None,
 ) -> Agent:
@@ -222,33 +221,54 @@ def create_agent(
     Create an agent with the given CRM config.
 
     Args:
-        mcp_crm_api_key: API key for the CRM MCP server.
+        api_keys: Dict with integration API keys.
         crm_config: Dict with CRM-specific prompt context.
         user_preferences: Dict with user-specific prompt preferences.
 
     Returns:
         Configured Agent instance
     """
+    keys = api_keys or {}
+    mcp_crm_api_key = keys.get("mcp_crm_api_key")
+    composio_api_key = keys.get("composio_api_key")
+
     config = crm_config or {}
     preferences = user_preferences or {}
     instruction = render_instruction(config, preferences)
-    print(instruction)
+    # print(instruction)
 
     # Instantiate MCP toolset
-    mcp_toolset = SafeMcpToolset(
+    founderstack_mcp_toolset = SafeMcpToolset(
         connection_params=StreamableHTTPConnectionParams(
             url=os.getenv("MCP_CRM_BASE_URL"),
             headers={
                 "Api-Key": mcp_crm_api_key,
                 "Content-Type": "application/json",
             },
-        )
+        ),
+    )
+
+    composio_mcp_toolset = SafeMcpToolset(
+        tool_name_prefix="composio",
+        connection_params=StreamableHTTPConnectionParams(
+            url="https://connect.composio.dev/mcp",
+            headers={
+                "x-consumer-api-key": composio_api_key,
+                "Content-Type": "application/json",
+            },
+        ),
     )
 
     # Initialize SkillToolset with CRM skill and MCP tools as additional tools
-    my_skill_toolset = SkillToolset(
+    founderstackcrm_skill_toolset = SkillToolset(
         skills=[_build_crm_skill(config)],
-        additional_tools=[mcp_toolset],
+        additional_tools=[founderstack_mcp_toolset],
+    )
+
+    composio_skill = load_skill_from_dir(_root_dir / "skills" / "composio")
+    composio_skill_toolset = SkillToolset(
+        skills=[composio_skill],
+        additional_tools=[composio_mcp_toolset],
     )
 
     return Agent(
@@ -265,9 +285,14 @@ def create_agent(
         instruction=instruction,
         before_model_callback=_stop_requested_callback,
         before_tool_callback=_stop_requested_before_tool,
-        tools=[my_skill_toolset],
+        tools=[founderstackcrm_skill_toolset, composio_skill_toolset],
     )
 
 
 # Default agent (without user-specific config)
-root_agent = create_agent("")
+root_agent = create_agent(
+    api_keys={
+        "mcp_crm_api_key": os.getenv("MCP_CRM_API_KEY", ""),
+        "composio_api_key": os.getenv("COMPOSIO_API_KEY", ""),
+    }
+)

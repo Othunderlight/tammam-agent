@@ -77,7 +77,7 @@ class AgentRequest(BaseModel):
     user_preferences: Optional[dict] = None
     session_id: Optional[str] = None
     stop_key: Optional[str] = None
-    mcp_crm_api_key: str
+    api_keys: Optional[dict] = None
 
 
 def _normalize_text(text: Optional[str]) -> Optional[str]:
@@ -161,7 +161,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
 
             # 3. Create agent with rendered instruction
             agent = create_agent(
-                request.mcp_crm_api_key,
+                request.api_keys or {},
                 request.crm_config or {},
                 request.user_preferences or {},
             )
