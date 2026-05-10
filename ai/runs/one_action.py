@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 
 from google.adk.apps import App
-from google.adk.plugins import ReflectAndRetryToolPlugin
+from google.adk.plugins import LoggingPlugin, ReflectAndRetryToolPlugin
 from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService
 from google.genai import types
@@ -173,7 +173,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             app = App(
                 name="tammam-agent",
                 root_agent=agent,
-                plugins=[ReflectAndRetryToolPlugin(max_retries=3)],
+                plugins=[ReflectAndRetryToolPlugin(max_retries=3), LoggingPlugin()],
             )
 
             # 4. Initialize the Runner
