@@ -12,7 +12,7 @@
   <a href="https://tammam.founderstack.cloud/">
     <img src="https://img.shields.io/badge/Website-Live-green?style=for-the-badge" alt="Website">
   </a>
-  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge" alt="License">
 </p>
 
 FastAPI-based AI Agent.
