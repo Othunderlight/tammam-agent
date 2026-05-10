@@ -4,13 +4,15 @@ import re
 import uuid
 from typing import Optional
 
-from ai.runs.stop_registry import register_active_run, unregister_active_run
-from ai.workflows.g_adk.manager.agent import create_agent
+from google.adk.apps import App
 from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService
 from google.genai import types
 from pydantic import BaseModel
+
+from ai.runs.stop_registry import register_active_run, unregister_active_run
+from ai.workflows.g_adk.manager.agent import create_agent
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 2  # seconds
@@ -168,12 +170,16 @@ async def ask_agent(request: AgentRequest, message_callback=None):
                 request.user_preferences or {},
             )
 
+            app = App(
+                name="tammam-agent",
+                root_agent=agent,
+                plugins=[ReflectAndRetryToolPlugin(max_retries=3)],
+            )
+
             # 4. Initialize the Runner
             runner = Runner(
-                agent=agent,
+                app=app,
                 session_service=session_service,
-                app_name="Tam_Agent",
-                plugins=[ReflectAndRetryToolPlugin(max_retries=3)],
             )
 
             # 5. Prepare the message
