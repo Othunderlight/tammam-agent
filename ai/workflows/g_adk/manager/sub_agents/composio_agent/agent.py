@@ -1,20 +1,9 @@
 import os
-from typing import Any, Dict, List, Optional
 
-from ai.runs.stop_registry import is_stop_requested
-from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
+from ai.utils.adk_safe import SafeMcpToolset
 from google.adk.agents import Agent
-from google.adk.agents.callback_context import CallbackContext
-from google.adk.models import Gemini, LlmRequest, LlmResponse
-from google.adk.skills import load_skill_from_dir, models
-from google.adk.tools.agent_tool import AgentTool
-
-# from google.adk.models.lite_llm import LiteLlm
-from google.adk.tools.base_tool import BaseTool
-from google.adk.tools.function_tool import FunctionTool
-from google.adk.tools.mcp_tool import McpToolset
+from google.adk.models import Gemini
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
-from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
 
 model = Gemini(model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"))
@@ -22,7 +11,7 @@ model = Gemini(model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"))
 
 def create_composio_agent(composio_api_key) -> Agent:
 
-    composio_mcp_toolset = McpToolset(
+    composio_mcp_toolset = SafeMcpToolset(
         connection_params=StreamableHTTPConnectionParams(
             url="https://connect.composio.dev/mcp",
             headers={

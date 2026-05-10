@@ -6,6 +6,7 @@ from typing import Optional
 
 from ai.runs.stop_registry import register_active_run, unregister_active_run
 from ai.workflows.g_adk.manager.agent import create_agent
+from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService
 from google.genai import types
@@ -42,6 +43,7 @@ _MCP_TOOL_FAILURE_PATTERNS = [
     "Failed to get tools from toolset",
     "Failed to get tools from MCP server",
     "CRM tool server unavailable",
+    "Tool server unavailable",
     "unhandled errors in a TaskGroup",
 ]
 
@@ -171,6 +173,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
                 agent=agent,
                 session_service=session_service,
                 app_name="Tam_Agent",
+                plugins=[ReflectAndRetryToolPlugin(max_retries=3)],
             )
 
             # 5. Prepare the message
