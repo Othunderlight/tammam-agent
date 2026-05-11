@@ -187,6 +187,12 @@ async def ask_agent(request: AgentRequest, message_callback=None):
                 max_total_tokens = state.get("max_total_tokens", 0)
                 warned = state.get("warned", False)
 
+            memory_service = VertexAiMemoryBankService(
+                project=GCP_PROJECT,
+                location=GOOGLE_CLOUD_PROJECT_LOCATION,
+                agent_engine_id=GOOGLE_CLOUD_AGENT_ENGINE_ID,
+            )
+
             # 3. Create agent with rendered instruction
             agent = create_agent(
                 request.api_keys or {},
@@ -205,6 +211,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
                 app=app,
                 app_name=REASONING_ENGINE_APP_NAME,  # was not proveded
                 session_service=session_service,
+                memory_service=memory_service,
             )
 
             # 5. Prepare the message

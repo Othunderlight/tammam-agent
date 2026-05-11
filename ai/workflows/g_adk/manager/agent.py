@@ -1,8 +1,6 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from ai.runs.stop_registry import is_stop_requested
-from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import Gemini, LlmRequest, LlmResponse
@@ -14,8 +12,12 @@ from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
+
+from ai.runs.stop_registry import is_stop_requested
+from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
 
 from .sub_agents.composio_agent.agent import create_composio_agent
 from .sub_agents.founderstack_crm_agent.agent import create_founderstack_crm_agent
@@ -60,6 +62,10 @@ async def _stop_requested_before_tool(tool, args, tool_context) -> Optional[dict
     return {"ok": False, "stopped": True, "message": "Execution stopped by user."}
 
 
+async def auto_save_session_to_memory_callback(callback_context):
+    await callback_context.add_session_to_memory()
+
+
 def create_agent(
     api_keys: Dict[str, str] = None,
     crm_config: Dict[str, Any] = None,
@@ -95,11 +101,13 @@ def create_agent(
         ),
         description="The Managar Agent",
         # include_contents="none", now the agent can remeber throght the session
-        # instruction="you are helpful assitant that reply only in 3 words max",
-        instruction=instruction,
+        instruction="you are helpful assitant that reply only in 3 words max",
+        # instruction=instruction,
         before_model_callback=_stop_requested_callback,
         before_tool_callback=_stop_requested_before_tool,
+        after_agent_callback=auto_save_session_to_memory_callback,
         tools=[
+            PreloadMemoryTool(),
             AgentTool(create_composio_agent(composio_api_key)),
             AgentTool(create_founderstack_crm_agent(mcp_crm_api_key, config)),
         ],
