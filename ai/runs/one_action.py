@@ -155,7 +155,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             # 2. Ensure session exists (create if it doesn't)
             try:
                 session = await session_service.create_session(
-                    app_name=REASONING_ENGINE_APP_NAME,  # was app_name="Tam_Agent",
+                    app_name=REASONING_ENGINE_APP_NAME,
                     user_id=request.user_id,
                     session_id=session_id,
                     state={},
@@ -164,13 +164,24 @@ async def ask_agent(request: AgentRequest, message_callback=None):
                 max_prompt_tokens = 0
                 max_total_tokens = 0
                 warned = False
-            except Exception:
-                # Session might already exist, try to get it
-                session = await session_service.get_session(
-                    app_name=REASONING_ENGINE_APP_NAME,  # was app_name="Tam_Agent",
-                    user_id=request.user_id,
-                    session_id=session_id,
-                )
+            except Exception as create_err:
+                # Session might already exist, try to get it.
+                # If this fails or returns None, we raise the original creation error.
+                try:
+                    session = await session_service.get_session(
+                        app_name=REASONING_ENGINE_APP_NAME,
+                        user_id=request.user_id,
+                        session_id=session_id,
+                    )
+                except Exception:
+                    # If getting it also fails, the original error is likely more useful.
+                    raise create_err
+
+                if session is None:
+                    # Session doesn't exist, so create_session failed for a real reason.
+                    raise create_err
+
+                print(f"🔄 DEBUG: Using EXISTING session: {session_id}")
                 state = session.state or {}
                 max_prompt_tokens = state.get("max_prompt_tokens", 0)
                 max_total_tokens = state.get("max_total_tokens", 0)
