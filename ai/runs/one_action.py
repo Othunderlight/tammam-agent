@@ -204,7 +204,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             app = App(
                 name="tammam_agent",
                 root_agent=agent,
-                plugins=[ReflectAndRetryToolPlugin(max_retries=3), FullLoggingPlugin()],
+                plugins=[ReflectAndRetryToolPlugin(max_retries=3)],
             )
 
             # 4. Initialize the Runner
