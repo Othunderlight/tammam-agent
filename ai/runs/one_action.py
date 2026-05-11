@@ -6,13 +6,14 @@ from typing import Optional
 
 from google.adk.apps import App
 from google.adk.memory import VertexAiMemoryBankService
-from google.adk.plugins import LoggingPlugin, ReflectAndRetryToolPlugin
+from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService, VertexAiSessionService
 from google.genai import types
 from pydantic import BaseModel
 
 from ai.runs.stop_registry import register_active_run, unregister_active_run
+from ai.utils.logging_plugin_full import FullLoggingPlugin
 from ai.workflows.g_adk.manager.agent import create_agent
 
 GOOGLE_CLOUD_PROJECT_NAME = os.getenv("GOOGLE_CLOUD_PROJECT_NAME")
@@ -203,7 +204,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             app = App(
                 name="tammam_agent",
                 root_agent=agent,
-                plugins=[ReflectAndRetryToolPlugin(max_retries=3), LoggingPlugin()],
+                plugins=[ReflectAndRetryToolPlugin(max_retries=3), FullLoggingPlugin()],
             )
 
             # 4. Initialize the Runner
