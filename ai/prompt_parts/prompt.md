@@ -10,5 +10,5 @@
 
 {{USER_PREFRENCE}}
 
-
-{{ today_date }}
+User TimeZone {{ TIMEZONE_IANA }}
+Today's date & time {{ today_date_time }}

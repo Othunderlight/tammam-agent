@@ -101,8 +101,8 @@ def create_agent(
         ),
         description="The Managar Agent",
         # include_contents="none", now the agent can remeber throght the session
-        instruction="you are helpful assitant that reply only in 3 words max",
-        # instruction=instruction,
+        # instruction="you are helpful assitant that reply only in 3 words max",
+        instruction=instruction,
         before_model_callback=_stop_requested_callback,
         before_tool_callback=_stop_requested_before_tool,
         after_agent_callback=auto_save_session_to_memory_callback,

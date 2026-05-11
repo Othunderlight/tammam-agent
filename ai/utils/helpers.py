@@ -1,6 +1,7 @@
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 _root_dir = Path(__file__).parent.parent
 BASE_INSTRUCTION = (_root_dir / "prompt_parts" / "prompt.md").read_text()
@@ -96,6 +97,7 @@ def _get_identity_replacements(
         "{{MEMORY_BLOCK}}": "MEMORY_BLOCK",
         "{{USER_PROFILE_BLOCK}}": "USER_PROFILE_BLOCK",
         "{{USER_PREFRENCE}}": "USER_PREFRENCE",
+        "{{ TIMEZONE_IANA }}": "TIMEZONE_IANA",
     }
 
     replacements = {}
@@ -117,11 +119,19 @@ def _get_identity_replacements(
     return replacements
 
 
-def _get_system_replacements() -> Dict[str, str]:
+def _get_system_replacements(user_timezone: str = "UTC") -> Dict[str, str]:
     """
-    Extract and format system-related placeholders.
+    Extract and format system-related placeholders with user's timezone.
     """
-    return {"{{ today_date }}": date.today().strftime("%Y-%m-%d")}
+    # Get current time in user's timezone
+    try:
+        tz = ZoneInfo(user_timezone)
+    except Exception:
+        tz = ZoneInfo("UTC")
+
+    now = datetime.now(tz)
+
+    return {"{{ today_date_time }}": now.strftime("%Y-%m-%d %H:%M:%S")}
 
 
 def render_instruction(user_preferences: Optional[Dict[str, Any]] = None) -> str:
@@ -129,15 +139,17 @@ def render_instruction(user_preferences: Optional[Dict[str, Any]] = None) -> str
     Render the instruction by replacing placeholders with context values.
 
     Args:
-        crm_config: Dict with pipeline_stages, lead_types, lead_sources from CRM API.
         user_preferences: Dict with user-level prompt preferences.
 
     Returns:
         Instruction string with placeholders replaced
     """
+    preferences = user_preferences or {}
+    user_timezone = preferences.get("TIMEZONE_IANA", "UTC")
+
     replacements = {}
     replacements.update(_get_identity_replacements(user_preferences))
-    replacements.update(_get_system_replacements())
+    replacements.update(_get_system_replacements(user_timezone))
 
     instruction = BASE_INSTRUCTION
     for placeholder, value in replacements.items():
