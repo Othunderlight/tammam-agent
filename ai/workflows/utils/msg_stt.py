@@ -7,6 +7,8 @@ import httpx
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_STT_MODEL = os.getenv("GROQ_STT_MODEL", "whisper-large-v3")
+GOOGLE_CLOUD_PROJECT_NAME = os.getenv("GOOGLE_CLOUD_PROJECT_NAME")
+GOOGLE_CLOUD_PROJECT_LOCATION = os.getenv("GOOGLE_CLOUD_PROJECT_LOCATION", "global")
 
 
 def _is_valid_transcript(text: Optional[str]) -> bool:
@@ -86,8 +88,8 @@ async def _transcribe_gemini(
     audio_data: bytes, mime_type: str, model: str
 ) -> Optional[str]:
     """Transcribe audio using Google's Gemini API."""
-    if not GEMINI_API_KEY:
-        print("Gemini STT skipped: GEMINI_API_KEY is not set.")
+    if not GEMINI_API_KEY or not GOOGLE_CLOUD_PROJECT_NAME:
+        print("Gemini STT skipped: GEMINI_API_KEY or GOOGLE_CLOUD_PROJECT_NAME is not set.")
         return None
 
     try:
