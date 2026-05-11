@@ -210,7 +210,7 @@ register_whatsapp_routes(app)
 @app.on_event("startup")
 async def startup():
     await init_telegram()
-    # await init_whatsapp()
+    await init_whatsapp()
     # Auto-set Telegram webhook on startup
     webhook_result = await set_webhook()
     if webhook_result["status"] != "success":
