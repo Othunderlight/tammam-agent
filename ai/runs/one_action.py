@@ -5,14 +5,24 @@ import uuid
 from typing import Optional
 
 from google.adk.apps import App
+from google.adk.memory import VertexAiMemoryBankService
 from google.adk.plugins import LoggingPlugin, ReflectAndRetryToolPlugin
 from google.adk.runners import Runner
-from google.adk.sessions import DatabaseSessionService
+from google.adk.sessions import DatabaseSessionService, VertexAiSessionService
 from google.genai import types
 from pydantic import BaseModel
 
 from ai.runs.stop_registry import register_active_run, unregister_active_run
 from ai.workflows.g_adk.manager.agent import create_agent
+
+GOOGLE_CLOUD_PROJECT_NAME = os.getenv("GOOGLE_CLOUD_PROJECT_NAME")
+GOOGLE_CLOUD_PROJECT_LOCATION = os.getenv("GOOGLE_CLOUD_PROJECT_LOCATION", "global")
+GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+GOOGLE_CLOUD_AGENT_ENGINE_ID = os.getenv("GOOGLE_CLOUD_AGENT_ENGINE_ID")
+
+# Use Project Name (string ID) if available, otherwise fallback to Project ID (number)
+GCP_PROJECT = GOOGLE_CLOUD_PROJECT_NAME or GOOGLE_CLOUD_PROJECT_ID
+REASONING_ENGINE_APP_NAME = f"projects/{GCP_PROJECT}/locations/{GOOGLE_CLOUD_PROJECT_LOCATION}/reasoningEngines/{GOOGLE_CLOUD_AGENT_ENGINE_ID}"
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 2  # seconds
@@ -136,13 +146,16 @@ async def ask_agent(request: AgentRequest, message_callback=None):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             # 1. Setup the service (Database for persistent memory)
-            db_url = os.getenv("ADK_DB_URL", "sqlite+aiosqlite:///./adk_sessions.db")
-            session_service = DatabaseSessionService(db_url)
+            # db_url = os.getenv("ADK_DB_URL", "sqlite+aiosqlite:///./adk_sessions.db")
+            # session_service = DatabaseSessionService(db_url)
+            session_service = VertexAiSessionService(
+                project=GCP_PROJECT, location=GOOGLE_CLOUD_PROJECT_LOCATION
+            )
 
             # 2. Ensure session exists (create if it doesn't)
             try:
                 session = await session_service.create_session(
-                    app_name="Tam_Agent",
+                    app_name=REASONING_ENGINE_APP_NAME,  # was app_name="Tam_Agent",
                     user_id=request.user_id,
                     session_id=session_id,
                     state={},
@@ -154,7 +167,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             except Exception:
                 # Session might already exist, try to get it
                 session = await session_service.get_session(
-                    app_name="Tam_Agent",
+                    app_name=REASONING_ENGINE_APP_NAME,  # was app_name="Tam_Agent",
                     user_id=request.user_id,
                     session_id=session_id,
                 )
@@ -171,7 +184,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             )
 
             app = App(
-                name="tammam-agent",
+                name="tammam_agent",
                 root_agent=agent,
                 plugins=[ReflectAndRetryToolPlugin(max_retries=3), LoggingPlugin()],
             )
@@ -179,6 +192,7 @@ async def ask_agent(request: AgentRequest, message_callback=None):
             # 4. Initialize the Runner
             runner = Runner(
                 app=app,
+                app_name=REASONING_ENGINE_APP_NAME,  # was not proveded
                 session_service=session_service,
             )
 
