@@ -4,12 +4,26 @@ import re
 import uuid
 from typing import Optional
 
-from ai.runs.stop_registry import register_active_run, unregister_active_run
-from ai.workflows.g_adk.tool_agent.agent import create_agent
+from google.adk.apps import App
+from google.adk.memory import VertexAiMemoryBankService
+from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.runners import Runner
-from google.adk.sessions import DatabaseSessionService
+from google.adk.sessions import DatabaseSessionService, VertexAiSessionService
 from google.genai import types
 from pydantic import BaseModel
+
+from ai.runs.stop_registry import register_active_run, unregister_active_run
+from ai.utils.logging_plugin_full import FullLoggingPlugin
+from ai.workflows.g_adk.manager.agent import create_agent
+
+GOOGLE_CLOUD_PROJECT_NAME = os.getenv("GOOGLE_CLOUD_PROJECT_NAME")
+GOOGLE_CLOUD_PROJECT_LOCATION = os.getenv("GOOGLE_CLOUD_PROJECT_LOCATION", "global")
+GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+GOOGLE_CLOUD_AGENT_ENGINE_ID = os.getenv("GOOGLE_CLOUD_AGENT_ENGINE_ID")
+
+# Use Project Name (string ID) if available, otherwise fallback to Project ID (number)
+GCP_PROJECT = GOOGLE_CLOUD_PROJECT_NAME or GOOGLE_CLOUD_PROJECT_ID
+REASONING_ENGINE_APP_NAME = f"projects/{GCP_PROJECT}/locations/{GOOGLE_CLOUD_PROJECT_LOCATION}/reasoningEngines/{GOOGLE_CLOUD_AGENT_ENGINE_ID}"
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 2  # seconds
@@ -42,6 +56,7 @@ _MCP_TOOL_FAILURE_PATTERNS = [
     "Failed to get tools from toolset",
     "Failed to get tools from MCP server",
     "CRM tool server unavailable",
+    "Tool server unavailable",
     "unhandled errors in a TaskGroup",
 ]
 
@@ -77,7 +92,7 @@ class AgentRequest(BaseModel):
     user_preferences: Optional[dict] = None
     session_id: Optional[str] = None
     stop_key: Optional[str] = None
-    mcp_crm_api_key: str
+    api_keys: Optional[dict] = None
 
 
 def _normalize_text(text: Optional[str]) -> Optional[str]:
@@ -132,13 +147,16 @@ async def ask_agent(request: AgentRequest, message_callback=None):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             # 1. Setup the service (Database for persistent memory)
-            db_url = os.getenv("ADK_DB_URL", "sqlite+aiosqlite:///./adk_sessions.db")
-            session_service = DatabaseSessionService(db_url)
+            # db_url = os.getenv("ADK_DB_URL", "sqlite+aiosqlite:///./adk_sessions.db")
+            # session_service = DatabaseSessionService(db_url)
+            session_service = VertexAiSessionService(
+                project=GCP_PROJECT, location=GOOGLE_CLOUD_PROJECT_LOCATION
+            )
 
             # 2. Ensure session exists (create if it doesn't)
             try:
                 session = await session_service.create_session(
-                    app_name="Tam_Agent",
+                    app_name=REASONING_ENGINE_APP_NAME,
                     user_id=request.user_id,
                     session_id=session_id,
                     state={},
@@ -147,30 +165,54 @@ async def ask_agent(request: AgentRequest, message_callback=None):
                 max_prompt_tokens = 0
                 max_total_tokens = 0
                 warned = False
-            except Exception:
-                # Session might already exist, try to get it
-                session = await session_service.get_session(
-                    app_name="Tam_Agent",
-                    user_id=request.user_id,
-                    session_id=session_id,
-                )
+            except Exception as create_err:
+                # Session might already exist, try to get it.
+                # If this fails or returns None, we raise the original creation error.
+                try:
+                    session = await session_service.get_session(
+                        app_name=REASONING_ENGINE_APP_NAME,
+                        user_id=request.user_id,
+                        session_id=session_id,
+                    )
+                except Exception:
+                    # If getting it also fails, the original error is likely more useful.
+                    raise create_err
+
+                if session is None:
+                    # Session doesn't exist, so create_session failed for a real reason.
+                    raise create_err
+
+                print(f"🔄 DEBUG: Using EXISTING session: {session_id}")
                 state = session.state or {}
                 max_prompt_tokens = state.get("max_prompt_tokens", 0)
                 max_total_tokens = state.get("max_total_tokens", 0)
                 warned = state.get("warned", False)
 
+            memory_service = VertexAiMemoryBankService(
+                project=GCP_PROJECT,
+                location=GOOGLE_CLOUD_PROJECT_LOCATION,
+                agent_engine_id=GOOGLE_CLOUD_AGENT_ENGINE_ID,
+            )
+
             # 3. Create agent with rendered instruction
             agent = create_agent(
-                request.mcp_crm_api_key,
+                request.api_keys or {},
                 request.crm_config or {},
                 request.user_preferences or {},
             )
 
+            app = App(
+                name="tammam_agent",
+                root_agent=agent,
+                plugins=[ReflectAndRetryToolPlugin(max_retries=3), FullLoggingPlugin()],
+            )
+
             # 4. Initialize the Runner
             runner = Runner(
-                agent=agent,
+                app=app,
+                app_name=REASONING_ENGINE_APP_NAME,  # was not proveded
                 session_service=session_service,
-                app_name="Tam_Agent",
+                memory_service=memory_service,
             )
 
             # 5. Prepare the message

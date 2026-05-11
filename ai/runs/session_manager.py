@@ -107,7 +107,7 @@ class SessionStore:
 
         # Create new session
         session_id = (
-            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+            f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}"
         )
         self._create_session(key, session_id)
 
@@ -119,7 +119,7 @@ class SessionStore:
 
         # Always create new session_id
         session_id = (
-            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+            f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}"
         )
         self._create_session(key, session_id)
 

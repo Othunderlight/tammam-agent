@@ -1,0 +1,167 @@
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
+
+_root_dir = Path(__file__).parent.parent
+BASE_INSTRUCTION = (_root_dir / "prompt_parts" / "prompt.md").read_text()
+FOUNDERSTACK_CRM_SKILL_TEMPLATE = (
+    _root_dir / "skills" / "founderstack-crm-toolkit" / "SKILL.md"
+).read_text()
+
+
+def _get_crm_replacements(crm_config: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Extract and format CRM-related placeholders.
+    """
+    replacements = {}
+
+    # Replace stage_choices - API returns: [{"label": "Lead"}, ...] or ["Lead", "Contact"]
+    pipeline_stages = crm_config.get("pipeline_stages", [])
+    stages = []
+    for s in pipeline_stages:
+        if isinstance(s, dict):
+            label = s.get("label", "")
+            if label:
+                stages.append(label)
+        elif isinstance(s, str):
+            stages.append(s)
+    replacements["{{ stage_choices }}"] = (
+        ", ".join(stages) if stages else "Lead, Contact, Customer"
+    )
+
+    # Replace type_choices - API returns: [{"label": "Prospect"}, ...] or ["Prospect", "Customer"]
+    lead_types = crm_config.get("lead_types", [])
+    types = []
+    for t in lead_types:
+        if isinstance(t, dict):
+            label = t.get("label", "")
+            if label:
+                types.append(label)
+        elif isinstance(t, str):
+            types.append(t)
+    replacements["{{ type_choices }}"] = (
+        ", ".join(types) if types else "Prospect, Customer"
+    )
+
+    # Replace lead_source_choices - API returns: [{"label": "Website"}, ...] or ["Website", "Referral"]
+    lead_sources = crm_config.get("lead_sources", [])
+    sources = []
+    for s in lead_sources:
+        if isinstance(s, dict):
+            label = s.get("label", "")
+            if label:
+                sources.append(label)
+        elif isinstance(s, str):
+            sources.append(s)
+    replacements["{{ lead_source_choices }}"] = (
+        ", ".join(sources) if sources else "Inbound, Outbound"
+    )
+
+    # Replace interaction_type_choices - API returns: ["Call: description", "Email", ...]
+    interaction_types = crm_config.get("interaction_types", [])
+    type_choices = []
+    for t in interaction_types:
+        if isinstance(t, str):
+            type_choices.append(t)
+        elif isinstance(t, dict):
+            name = t.get("name", "")
+            if name:
+                type_choices.append(name)
+
+    if type_choices:
+        replacements["{{ interaction_type_choices }}"] = "- " + "\n- ".join(
+            type_choices
+        )
+    else:
+        replacements["{{ interaction_type_choices }}"] = (
+            "- Ask user to define one and use create_interaction_type."
+        )
+
+    return replacements
+
+
+def _get_identity_replacements(
+    user_preferences: Optional[Dict[str, Any]],
+) -> Dict[str, str]:
+    """
+    Extract and format user preference-related placeholders.
+    """
+    preferences = user_preferences or {}
+
+    # Define the mapping of placeholders to their corresponding preference keys (checking both cases)
+    mapping = {
+        "{{IDENTITY}}": "IDENTITY",
+        "{{TOOL_GUIDANCE}}": "TOOL_GUIDANCE",
+        "{{USER_CUSTOM_SYSTEM_MESSAGE}}": "USER_CUSTOM_SYSTEM_MESSAGE",
+        "{{MEMORY_BLOCK}}": "MEMORY_BLOCK",
+        "{{USER_PROFILE_BLOCK}}": "USER_PROFILE_BLOCK",
+        "{{USER_PREFRENCE}}": "USER_PREFRENCE",
+        "{{ TIMEZONE_IANA }}": "TIMEZONE_IANA",
+    }
+
+    replacements = {}
+    for placeholder, key in mapping.items():
+        # Try uppercase first, then lowercase
+        value = preferences.get(key)
+        if value is None:
+            value = preferences.get(key.lower(), "")
+
+        # Fallback for style/preference if empty
+        if not value and key == "USER_PREFRENCE":
+            value = "No additional communication-style preference was provided. Follow the default style rules above."
+
+        if isinstance(value, str):
+            replacements[placeholder] = value.strip()
+        else:
+            replacements[placeholder] = str(value) if value is not None else ""
+
+    return replacements
+
+
+def _get_system_replacements(user_timezone: str = "UTC") -> Dict[str, str]:
+    """
+    Extract and format system-related placeholders with user's timezone.
+    """
+    # Get current time in user's timezone
+    try:
+        tz = ZoneInfo(user_timezone)
+    except Exception:
+        tz = ZoneInfo("UTC")
+
+    now = datetime.now(tz)
+
+    return {"{{ today_date_time }}": now.strftime("%Y-%m-%d %H:%M:%S")}
+
+
+def render_instruction(user_preferences: Optional[Dict[str, Any]] = None) -> str:
+    """
+    Render the instruction by replacing placeholders with context values.
+
+    Args:
+        user_preferences: Dict with user-level prompt preferences.
+
+    Returns:
+        Instruction string with placeholders replaced
+    """
+    preferences = user_preferences or {}
+    user_timezone = preferences.get("TIMEZONE_IANA", "UTC")
+
+    replacements = {}
+    replacements.update(_get_identity_replacements(user_preferences))
+    replacements.update(_get_system_replacements(user_timezone))
+
+    instruction = BASE_INSTRUCTION
+    for placeholder, value in replacements.items():
+        instruction = instruction.replace(placeholder, value)
+
+    return instruction
+
+
+def render_crm_skill_instruction(crm_config: Dict[str, Any]) -> str:
+    """Render CRM skill instructions from template placeholders."""
+    replacements = _get_crm_replacements(crm_config)
+    instruction = FOUNDERSTACK_CRM_SKILL_TEMPLATE
+    for placeholder, value in replacements.items():
+        instruction = instruction.replace(placeholder, value)
+    return instruction

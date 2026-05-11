@@ -53,6 +53,7 @@ async def handle_integration_message(
         return {"status": "error", "answer": "Invalid credentials"}
 
     crm_api_key = user_info.get("integration_keys", {}).get("crm_api_key")
+    composio_api_key = user_info.get("integration_keys", {}).get("composio_api_key")
     if not crm_api_key:
         return {
             "status": "error",
@@ -92,7 +93,10 @@ async def handle_integration_message(
             user_preferences=preferences,
             session_id=session_id,  # Use provided session_id or None for new session
             stop_key=stop_key,
-            mcp_crm_api_key=crm_api_key,
+            api_keys={
+                "mcp_crm_api_key": crm_api_key,
+                "composio_api_key": composio_api_key,
+            },
         )
 
         result = await ask_agent(request, message_callback=message_callback)

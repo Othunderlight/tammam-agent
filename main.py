@@ -196,8 +196,8 @@ async def test_connection(user_data: dict = Depends(verify_token)):
 
 # --- Telegram Webhook ---
 
-from integrations.telegram.webhook import init_telegram, telegram_webhook_handler
 from integrations.telegram.set_webhook import set_webhook, verify_webhook
+from integrations.telegram.webhook import init_telegram, telegram_webhook_handler
 from integrations.whatsapp.client import (
     init_whatsapp,
     register_whatsapp_routes,
@@ -246,9 +246,7 @@ async def send_telegram_message(
 
     try:
         await authorize_telegram_send_message(request.user_id, user_data)
-        await telegram_bot.send_message(
-            chat_id=request.user_id, text=request.message
-        )
+        await telegram_bot.send_message(chat_id=request.user_id, text=request.message)
         return {"status": "success", "message": "Message sent"}
     except HTTPException:
         raise
