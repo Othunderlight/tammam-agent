@@ -268,9 +268,15 @@ def extract_user_info(credentials: dict) -> dict:
     org = user.get("organization", {})
     keys = {k["name"]: k["value"] for k in user_data.get("keys", [])}
 
+    # Combine user_id and email for better safety in production (e.g., 1+example+gmail+com)
+    original_id = str(user.get("id"))
+    email = user.get("email") or ""
+    safe_email = email.replace("@", "+").replace(".", "+")
+    combined_user_id = f"{original_id}+{safe_email}" if safe_email else original_id
+
     return {
-        "user_id": str(user.get("id")),
-        "email": user.get("email"),
+        "user_id": combined_user_id,
+        "email": email,
         "first_name": user.get("first_name"),
         "organization_id": org.get("id"),
     }
