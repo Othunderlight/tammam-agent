@@ -29,3 +29,4 @@ from ai.tools.crm.tasks import (
     list_tasks,
     update_task,
 )
+from ai.tools.usr.prefrences import manage_user_profile

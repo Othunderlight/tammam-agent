@@ -18,6 +18,7 @@ from google.genai import types
 
 from ai.runs.stop_registry import is_stop_requested
 from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
+from ai.tools.tool_wrapped import manage_user_profile
 
 from .sub_agents.composio_agent.agent import create_composio_agent
 from .sub_agents.founderstack_crm_agent.agent import create_founderstack_crm_agent
@@ -110,6 +111,7 @@ def create_agent(
             PreloadMemoryTool(),
             AgentTool(create_composio_agent(composio_api_key)),
             AgentTool(create_founderstack_crm_agent(mcp_crm_api_key, config)),
+            manage_user_profile,
         ],
     )
 
