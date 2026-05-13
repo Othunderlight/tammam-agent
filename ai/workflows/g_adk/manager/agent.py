@@ -21,6 +21,7 @@ from google.genai import types
 
 from .sub_agents.composio_agent.agent import create_composio_agent
 from .sub_agents.founderstack_crm_agent.agent import create_founderstack_crm_agent
+from .sub_agents.soical_scrabing_agent.agent import create_social_scrape_agent
 
 # model = LiteLlm(
 #     model="openrouter/deepseek/deepseek-v3.2",  # old is groq/moonshotai/kimi-k2-instruct
@@ -85,6 +86,7 @@ def create_agent(
     keys = api_keys or {}
     mcp_crm_api_key = keys.get("mcp_crm_api_key")
     composio_api_key: str | None = keys.get("composio_api_key")
+    social_scrape_api_key: str | None = keys.get("social_scrape_api_key")
 
     config = crm_config or {}
     preferences = user_preferences or {}
@@ -110,6 +112,7 @@ def create_agent(
             PreloadMemoryTool(),
             AgentTool(create_composio_agent(composio_api_key)),
             AgentTool(create_founderstack_crm_agent(mcp_crm_api_key, config)),
+            AgentTool(create_social_scrape_agent(social_scrape_api_key)),
             # manage_user_profile,
         ],
     )
@@ -120,5 +123,6 @@ root_agent = create_agent(
     api_keys={
         "mcp_crm_api_key": os.getenv("MCP_CRM_API_KEY", ""),
         "composio_api_key": os.getenv("COMPOSIO_API_KEY", ""),
+        "social_scrape_api_key": "none",
     }
 )

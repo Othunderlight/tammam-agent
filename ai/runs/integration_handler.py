@@ -60,6 +60,9 @@ async def handle_integration_message(
 
     crm_api_key = user_info.get("integration_keys", {}).get("crm_api_key")
     composio_api_key = user_info.get("integration_keys", {}).get("composio_api_key")
+    social_scrape_api_key = user_info.get("integration_keys", {}).get(
+        "social_scrape_api_key"
+    )
     if not crm_api_key:
         return {
             "status": "error",
@@ -102,6 +105,7 @@ async def handle_integration_message(
             api_keys={
                 "mcp_crm_api_key": crm_api_key,
                 "composio_api_key": composio_api_key,
+                "social_scrape_api_key": social_scrape_api_key,
             },
         )
 

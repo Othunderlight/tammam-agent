@@ -107,6 +107,27 @@ def _make_unavailable_tool(tool_name: str, reason: str) -> FunctionTool:
     return FunctionTool(_tool)
 
 
+def _make_server_error_tool(reason: str) -> FunctionTool:
+    """A loud tool to signal to the model that tool discovery failed completely."""
+
+    async def mcp_tool_server_error_report(**kwargs):
+        return {
+            "ok": False,
+            "error": "The tool server is currently unreachable. Initialization failed.",
+            "details": reason,
+            "instruction": "DO NOT hallucinate tool results. Report tha an error happend to the user.",
+        }
+
+    mcp_tool_server_error_report.__name__ = "mcp_tool_server_error_report"
+    mcp_tool_server_error_report.__doc__ = (
+        "CRITICAL: This tool signals that the MCP tool server failed to initialize. "
+        "When this tool is present, it means the server is DOWN. "
+        "DO NOT ATTEMPT TO ESTIMATE OR HALLUCINATE ANY TOOL DATA. "
+        "Simply inform the user that the tool system is currently offline, tell them to contact support team@founderstack.cloud"
+    )
+    return FunctionTool(mcp_tool_server_error_report)
+
+
 class SafeMcpToolset(McpToolset):
     """MCP toolset that never hides tool discovery or tool execution failures."""
 
@@ -121,13 +142,25 @@ class SafeMcpToolset(McpToolset):
         try:
             tools = await super().get_tools(readonly_context)
         except Exception as e:
-            if not self.expected_tool_names:
-                raise e
-
             reason = str(e)
-            return [
-                _make_unavailable_tool(tool_name, reason)
-                for tool_name in self.expected_tool_names
-            ]
+            fallbacks: List[BaseTool] = []
+
+            # If we have expected names (e.g. for internal CRM), provide mock tools
+            if self.expected_tool_names:
+                fallbacks.extend(
+                    [
+                        _make_unavailable_tool(tool_name, reason)
+                        for tool_name in self.expected_tool_names
+                    ]
+                )
+
+            # ALWAYS add a loud error tool so the agent knows WHY it has no tools
+            # and is explicitly told not to hallucinate.
+            fallbacks.append(_make_server_error_tool(reason))
+            return fallbacks
+
+        if not tools:
+            # Even if super() succeeded but returned nothing, that's often a sign of a silent failure
+            return [_make_server_error_tool("Discovery returned zero tools.")]
 
         return [SafeMcpTool(tool) for tool in tools]

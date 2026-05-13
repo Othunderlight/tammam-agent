@@ -9,42 +9,39 @@ from google.genai import types
 model = Gemini(model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"))
 
 
-def create_composio_agent(composio_api_key) -> Agent:
+def create_social_scrape_agent(social_scrape_api_key) -> Agent:
 
-    composio_mcp_toolset = SafeMcpToolset(
+    social_scrape_mcp_toolset = SafeMcpToolset(
         connection_params=StreamableHTTPConnectionParams(
-            url="https://connect.composio.dev/mcp",
-            headers={
-                "x-consumer-api-key": str(composio_api_key),
-                "Content-Type": "application/json",
-            },
+            url=str(os.getenv("SOCIAL_SCRAPING_MCP_URL")),
+            headers={"x-api-key": str(social_scrape_api_key)},
         ),
     )
 
-    # composio_skill = load_skill_from_dir(_root_dir / "skills" / "composio")
-    # composio_skill_toolset = SkillToolset(
-    #     skills=[composio_skill],
-    #     additional_tools=[composio_mcp_toolset],
+    # social_scrape_skill = load_skill_from_dir(_root_dir / "skills" / "social_scrape")
+    # social_scrape_skill_toolset = SkillToolset(
+    #     skills=[social_scrape_skill],
+    #     additional_tools=[social_scrape_mcp_toolset],
     # )
 
     return Agent(
-        name="composio_agent",
+        name="social_scraping_agent",
         model=model,
         generate_content_config=types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(
                 thinking_level=types.ThinkingLevel.MINIMAL,
             )
         ),
-        description="The Composio agent",
+        description="Social Scraping Agent for Facebook, Instegram, YouTube, Twitter (X), Tiktok, Threads, Reddit, Pinterest, Basic Linkedin AND thier ads, Link-in-Bio AND google search",
         # include_contents="none", now the agent can remeber throght the session
         # instruction="you are helpful assitant that reply only in 3 words max",
         instruction="""
-        you have composio skill and tools, whihc can make you over than +1000 apps, use them to help the user out, make sure the tool is connected and authorized before you use it, if not give the user the link to connect it
+        help the user perform analatics, or search, extra...
         You are a specialized tool-user. Your ONLY source of truth is the output of your tools. If your tools fail, return an error message to the manager agent. DO NOT generate data from your own memory.
         """,
-        tools=[composio_mcp_toolset],
+        tools=[social_scrape_mcp_toolset],
     )
 
 
 # Default agent (without user-specific config)
-composio_agent = create_composio_agent("none")
+social_scrape_agent = create_social_scrape_agent("none")

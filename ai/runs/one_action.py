@@ -4,6 +4,9 @@ import re
 import uuid
 from typing import Optional
 
+from ai.runs.stop_registry import register_active_run, unregister_active_run
+from ai.utils.logging_plugin_full import FullLoggingPlugin
+from ai.workflows.g_adk.manager.agent import create_agent
 from google.adk.apps import App
 from google.adk.memory import VertexAiMemoryBankService
 from google.adk.plugins import ReflectAndRetryToolPlugin
@@ -11,10 +14,6 @@ from google.adk.runners import Runner
 from google.adk.sessions import DatabaseSessionService, VertexAiSessionService
 from google.genai import types
 from pydantic import BaseModel
-
-from ai.runs.stop_registry import register_active_run, unregister_active_run
-from ai.utils.logging_plugin_full import FullLoggingPlugin
-from ai.workflows.g_adk.manager.agent import create_agent
 
 GOOGLE_CLOUD_PROJECT_NAME = os.getenv("GOOGLE_CLOUD_PROJECT_NAME")
 GOOGLE_CLOUD_PROJECT_LOCATION = os.getenv("GOOGLE_CLOUD_PROJECT_LOCATION", "global")
@@ -43,6 +42,9 @@ _RETRYABLE_PATTERNS = [
     "Timeout",
     "ConnectionError",
     "APIConnectionError",
+    "Failed to create MCP session",
+    "Failed to get tools from toolset",
+    "unhandled errors in a TaskGroup",
 ]
 
 _HIGH_DEMAND_PATTERNS = [
@@ -58,6 +60,7 @@ _MCP_TOOL_FAILURE_PATTERNS = [
     "CRM tool server unavailable",
     "Tool server unavailable",
     "unhandled errors in a TaskGroup",
+    "mcp_tool_server_error_report",
 ]
 
 _TOOL_NOT_FOUND_PATTERN = re.compile(r"^Tool '.*' not found\.$", re.MULTILINE)
@@ -78,11 +81,11 @@ def get_user_facing_error_message(error: Exception) -> str:
 
     if any(pattern in error_str for pattern in _MCP_TOOL_FAILURE_PATTERNS):
         return (
-            "The CRM tools are currently unavailable, so I could not verify or"
-            " complete that action. Please try again in a moment."
+            "The tools are currently unavailable due to a connection error, "
+            "so I could not verify or complete that action. Please try again in a moment. contact support on team@founderstack.cloud"
         )
 
-    return "Sorry, something went wrong on my end. Please try again in a moment. 🙏"
+    return "Sorry, something went wrong on my end. Please try again in a moment. 🙏 team@founderstack.cloud"
 
 
 class AgentRequest(BaseModel):
@@ -109,6 +112,14 @@ def _normalize_text(text: Optional[str]) -> Optional[str]:
 def _extract_tool_runtime_error(error: Exception) -> Optional[str]:
     """Extract the dynamic tool-not-found details from an ADK exception."""
     error_str = str(error)
+
+    # Check for MCP initialization failure specifically
+    if any(
+        p in error_str
+        for p in ["Failed to create MCP session", "Failed to get tools from toolset"]
+    ):
+        return f"MCP TOOLSET INITIALIZATION ERROR: {error_str}"
+
     lines = [line.strip() for line in error_str.splitlines() if line.strip()]
 
     tool_line = next(
@@ -121,6 +132,8 @@ def _extract_tool_runtime_error(error: Exception) -> Optional[str]:
     )
 
     if not tool_line or not available_tools_line:
+        if "mcp_tool_server_error_report" in error_str:
+            return f"TOOL SERVER ERROR: {error_str}"
         return None
 
     return f"{tool_line}\n{available_tools_line}"
@@ -128,6 +141,16 @@ def _extract_tool_runtime_error(error: Exception) -> Optional[str]:
 
 def _build_tool_runtime_retry_query(original_query: str, tool_error: str) -> str:
     """Give the model the exact runtime tool error so it can recover."""
+    if "INITIALIZATION ERROR" in tool_error or "SERVER ERROR" in tool_error:
+        return (
+            "SYSTEM TOOL ERROR:\n"
+            f"{tool_error}\n\n"
+            "The tool server encountered an error and could not be initialized. "
+            "DO NOT hallucinate results for tools you cannot see. "
+            "Inform the user about the connection error and suggest trying again later.\n"
+            f"Original user request:\n{original_query}"
+        )
+
     return (
         "SYSTEM TOOL RUNTIME ERROR:\n"
         f"{tool_error}\n\n"

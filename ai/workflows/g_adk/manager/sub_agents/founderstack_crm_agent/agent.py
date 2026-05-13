@@ -1,14 +1,13 @@
 import os
 from typing import Any, Dict
 
+from ai.utils.adk_safe import SafeMcpToolset
+from ai.utils.helpers import render_crm_skill_instruction
 from google.adk.agents import Agent
 from google.adk.models import Gemini
 from google.adk.skills import models
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
 from google.genai import types
-
-from ai.utils.adk_safe import SafeMcpToolset
-from ai.utils.helpers import render_crm_skill_instruction
 
 model = Gemini(model=os.getenv("GEMINI_MODEL", "gemini-3-flash-preview"))
 
@@ -56,13 +55,20 @@ def create_founderstack_crm_agent(
 
     config = crm_config or {}
     instructions = render_crm_skill_instruction(config)
+    # Append the specialized tool-user instruction
+    instructions += (
+        "\n\nYou are a specialized tool-user. Your ONLY source of truth is the output of your tools. "
+        "If your tools fail, return an error message to the manager agent. "
+        "DO NOT generate data from your own memory."
+    )
+
     # Instantiate MCP toolset
     founderstack_mcp_toolset = SafeMcpToolset(
         expected_tool_names=EXPECTED_MCP_TOOL_NAMES,
         connection_params=StreamableHTTPConnectionParams(
-            url=os.getenv("MCP_CRM_BASE_URL"),
+            url=str(os.getenv("MCP_CRM_BASE_URL")),
             headers={
-                "Api-Key": mcp_crm_api_key,
+                "Api-Key": str(mcp_crm_api_key),
                 "Content-Type": "application/json",
             },
         ),
