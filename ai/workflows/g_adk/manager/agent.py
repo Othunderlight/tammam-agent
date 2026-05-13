@@ -1,6 +1,9 @@
 import os
 from typing import Any, Dict, List, Optional
 
+from ai.runs.stop_registry import is_stop_requested
+from ai.tools.tool_wrapper import manage_user_profile
+from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import Gemini, LlmRequest, LlmResponse
@@ -15,10 +18,6 @@ from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnecti
 from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
-
-from ai.runs.stop_registry import is_stop_requested
-from ai.utils.helpers import _root_dir, render_crm_skill_instruction, render_instruction
-from ai.tools.tool_wrapped import manage_user_profile
 
 from .sub_agents.composio_agent.agent import create_composio_agent
 from .sub_agents.founderstack_crm_agent.agent import create_founderstack_crm_agent
