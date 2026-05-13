@@ -79,7 +79,7 @@ No auto-formatter configured. Manually format code to match existing style:
 ### Imports
 
 - Standard library imports first, then third-party, then local
-- Use absolute imports (e.g., `from ai.tools.crm import create_person`)
+- Use absolute imports (e.g., `from ai.tools.crm_depricated import create_person`)
 - Group by: stdlib → external → local
 - Sort alphabetically within groups
 
@@ -93,7 +93,7 @@ import httpx
 import inngest
 from fastapi import FastAPI
 
-from ai.tools.crm import create_person
+from ai.tools.crm_depricated import create_person
 from auth import generate_system_token
 ```
 

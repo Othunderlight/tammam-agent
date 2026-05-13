@@ -6,7 +6,7 @@ import os
 
 import httpx
 
-from ai.tools.crm_context import get_api_key
+from ai.tools.manage_api_key import get_api_key
 
 BASE_URL = os.getenv("SYSTEM_API_ENDPOINT")
 

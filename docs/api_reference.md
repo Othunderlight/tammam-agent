@@ -11,7 +11,7 @@ Manage individual user settings and preferences dynamically to customize AI beha
 - `GET /api/user-preferences/my-preferences/`: Fetch all settings for the current user.
 - `POST /api/user-preferences/my-preferences/`: Update or bulk-create preferences.
 
-### AI Integration (`ai/tools/usr/prefrences.py`)
+### AI Integration (`ai/tools/usr/prefrence.py`)
 The AI service fetches these preferences to customize the system prompt or agent behavior (e.g., tone of voice, theme, notification settings).
 
 ---

@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Optional
 
 import httpx
-from ai.tools.crm_context import get_api_key
+from ai.tools.manage_api_key import get_api_key
 
 
 class Platform(Enum):

@@ -113,8 +113,8 @@ While tools like **OpenClaw** are powerful, they are often difficult to scale fo
 The system is designed to work seamlessly with an existing backend to provide secure, personalized AI experiences.
 
 - **Backend-Driven Auth:** We assume a backend is already managing user integrations. When a message arrives (e.g., from Telegram or WhatsApp), the service validates the sender's Chat ID against the backend. If the user isn't recognized, access is denied.
-- **Contextual API Keys:** The backend provides a scoped API key for each user. This key is used for authenticating MCP servers and loading user-specific CRM context directly into the agent's prompt (see `ai/tools/crm_context.py`).
-- **Dynamic User Preferences:** Personalization is handled by fetching user preferences from the backend and rendering them in the prompt. This ensures the agent adapts to the unique workflow and style of every user (see `ai/tools/usr/prefrences.py`).
+- **Contextual API Keys:** The backend provides a scoped API key for each user. This key is used for authenticating MCP servers and loading user-specific CRM context directly into the agent's prompt (see `ai/tools/manage_api_key.py`).
+- **Dynamic User Preferences:** Personalization is handled by fetching user preferences from the backend and rendering them in the prompt. This ensures the agent adapts to the unique workflow and style of every user (see `ai/tools/usr/prefrence.py`).
 
 ## Project Structure
 
@@ -133,8 +133,8 @@ fastai/
 │   │   └── stop_registry.py       # Handles cancellation/stopping of active agent runs
 │   │
 │   ├── tools/                  # Config & Legacy: CRM context & personalization
-│   │   ├── crm_context.py      # Fetches/injects CRM context from backend into prompts
-│   │   ├── usr/prefrences.py   # Loads user-specific preferences for personalization
+│   │   ├── manage_api_key.py      # Fetches/injects CRM context from backend into prompts
+│   │   ├── usr/prefrence.py   # Loads user-specific preferences for personalization
 │   │   └── crm/                # Deprecated toolsets (kept for reference, moved to MCP)
 │   │
 │   ├── workflows/              # Agents & Prompts: Actual agent implementations

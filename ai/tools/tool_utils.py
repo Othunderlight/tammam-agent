@@ -1,9 +1,11 @@
-import inspect
-import httpx
-from typing import Callable, Any, Dict, Optional
 import asyncio
+import inspect
+from typing import Any, Callable, Dict, Optional
 
-from ai.tools.crm_context import get_api_key
+import httpx
+
+from ai.tools.manage_api_key import get_api_key
+
 
 def _safe_json(response: httpx.Response):
     """Best-effort JSON decoding for API error payloads."""
@@ -13,7 +15,9 @@ def _safe_json(response: httpx.Response):
         if isinstance(result, (dict, list)):
             return result
         else:
-            print(f"Warning: API returned non-dict/list JSON: {type(result)} - {result}")
+            print(
+                f"Warning: API returned non-dict/list JSON: {type(result)} - {result}"
+            )
             return {"error": "Invalid response format", "raw_response": str(result)}
     except ValueError:
         return None
@@ -60,23 +64,27 @@ class ToolWrapper:
     Wrapper class that hides apikey from function signature.
     The agent will only see parameters other than apikey.
     """
-    
+
     def __init__(self, func: Callable, is_async: bool = False):
         self._func = func
         self._is_async = is_async
-        
+
         # Create clean signature without apikey
         original_sig = inspect.signature(func)
-        new_params = [p for p in original_sig.parameters.values() if p.name != 'apikey']
+        new_params = [p for p in original_sig.parameters.values() if p.name != "apikey"]
         self.__signature__ = inspect.Signature(parameters=new_params)
-        
+
         # Clean docstring to remove apikey references
-        clean_doc = (func.__doc__ or "")
-        clean_doc = clean_doc.replace("    Args:\n        apikey: API key for authentication.\n", "")
-        clean_doc = clean_doc.replace("Args:\n        apikey: API key for authentication.\n", "")
+        clean_doc = func.__doc__ or ""
+        clean_doc = clean_doc.replace(
+            "    Args:\n        apikey: API key for authentication.\n", ""
+        )
+        clean_doc = clean_doc.replace(
+            "Args:\n        apikey: API key for authentication.\n", ""
+        )
         self.__doc__ = clean_doc
         self.__name__ = func.__name__
-    
+
     def __call__(self, *args, **kwargs):
         api_key = get_api_key()
         if not api_key:
@@ -85,7 +93,9 @@ class ToolWrapper:
             result = self._func(api_key, *args, **kwargs)
             # Ensure result is a dict
             if not isinstance(result, dict):
-                print(f"Warning: Tool {self.__name__} returned non-dict: {type(result)} - {result}")
+                print(
+                    f"Warning: Tool {self.__name__} returned non-dict: {type(result)} - {result}"
+                )
                 return {"error": "Tool returned invalid format", "result": str(result)}
             return result
         except (httpx.HTTPStatusError, httpx.RequestError) as error:
@@ -93,7 +103,7 @@ class ToolWrapper:
         except Exception as e:
             print(f"Unexpected error in tool {self.__name__}: {e}")
             return {"error": "Tool execution failed", "detail": str(e)}
-    
+
     async def call_async(self, *args, **kwargs):
         api_key = get_api_key()
         if not api_key:
@@ -102,7 +112,9 @@ class ToolWrapper:
             result = await self._func(api_key, *args, **kwargs)
             # Ensure result is a dict
             if not isinstance(result, dict):
-                print(f"Warning: Tool {self.__name__} returned non-dict: {type(result)} - {result}")
+                print(
+                    f"Warning: Tool {self.__name__} returned non-dict: {type(result)} - {result}"
+                )
                 return {"error": "Tool returned invalid format", "result": str(result)}
             return result
         except (httpx.HTTPStatusError, httpx.RequestError) as error:
@@ -116,17 +128,21 @@ def wrap_with_api_key(func: Callable) -> Callable:
     """Wrap a function to inject API key from context, hiding it from signature."""
     is_async = asyncio.iscoroutinefunction(func)
     wrapper = ToolWrapper(func, is_async)
-    
+
     if is_async:
+
         async def wrapped(*args, **kwargs):
             return await wrapper.call_async(*args, **kwargs)
+
         wrapped.__signature__ = wrapper.__signature__
         wrapped.__doc__ = wrapper.__doc__
         wrapped.__name__ = wrapper.__name__
         return wrapped
     else:
+
         def wrapped(*args, **kwargs):
             return wrapper(*args, **kwargs)
+
         wrapped.__signature__ = wrapper.__signature__
         wrapped.__doc__ = wrapper.__doc__
         wrapped.__name__ = wrapper.__name__

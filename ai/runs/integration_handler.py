@@ -1,7 +1,7 @@
 from ai.runs.one_action import AgentRequest, ask_agent
 from ai.tools.crm_config import get_crm_config
-from ai.tools.crm_context import clear_api_key, set_api_key
-from ai.tools.usr.prefrences import get_my_preferences
+from ai.tools.manage_api_key import clear_api_key, set_api_key
+from ai.tools.usr.prefrence import get_my_preferences
 
 
 def extract_user_info(credentials: dict) -> dict:

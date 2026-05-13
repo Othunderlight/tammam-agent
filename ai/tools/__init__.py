@@ -1,4 +1,4 @@
-# from ai.tools.crm.company import (
+# from ai.tools.crm_depricated.company import (
 #     create_company,
 #     delete_company,
 #     get_company,
@@ -6,14 +6,14 @@
 #     list_companies,
 #     update_company,
 # )
-# from ai.tools.crm.notes import (
+# from ai.tools.crm_depricated.notes import (
 #     create_note,
 #     delete_note,
 #     get_note,
 #     list_notes,
 #     update_note,
 # )
-# from ai.tools.crm.people import (
+# from ai.tools.crm_depricated.people import (
 #     create_person,
 #     delete_person,
 #     get_person,
@@ -22,11 +22,11 @@
 #     list_people,
 #     update_person,
 # )
-# from ai.tools.crm.tasks import (
+# from ai.tools.crm_depricated.tasks import (
 #     create_task,
 #     delete_task,
 #     get_task,
 #     list_tasks,
 #     update_task,
 # )
-from ai.tools.usr.prefrences import manage_user_profile
+from ai.tools.usr.prefrence import manage_user_profile

@@ -7,7 +7,7 @@ from ai.runs.integration_handler import handle_integration_message
 from ai.runs.one_action import get_user_facing_error_message
 from ai.runs.session_manager import Platform, SessionSource, SessionStore
 from ai.runs.stop_registry import request_stop
-from ai.tools.crm_context import clear_api_key, set_api_key
+from ai.tools.manage_api_key import clear_api_key, set_api_key
 from ai.utils.logger import log_conversation
 from ai.workflows.utils.msg_stt import transcribe_audio
 from telegram import Bot, Message, Update
