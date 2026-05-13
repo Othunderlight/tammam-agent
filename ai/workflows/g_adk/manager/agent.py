@@ -92,7 +92,7 @@ def create_agent(
     # print(instruction)
 
     return Agent(
-        name="tool_agent",
+        name="tammam_agent",
         model=model,
         generate_content_config=types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(
@@ -110,7 +110,7 @@ def create_agent(
             PreloadMemoryTool(),
             AgentTool(create_composio_agent(composio_api_key)),
             AgentTool(create_founderstack_crm_agent(mcp_crm_api_key, config)),
-            manage_user_profile,
+            # manage_user_profile,
         ],
     )
 
