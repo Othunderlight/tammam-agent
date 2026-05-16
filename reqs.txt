@@ -21,3 +21,4 @@ google-adk[all]
 litellm==1.82.6
 chatgpt_md_converter
 pydub
+croniter

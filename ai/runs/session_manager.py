@@ -13,6 +13,8 @@ class Platform(Enum):
     TELEGRAM = "telegram"
     DISCORD = "discord"
     WHATSAPP = "whatsapp"
+    WEBCHAT = "webchat"
+    CRON = "cron"
 
 
 @dataclass

@@ -60,9 +60,8 @@ def _get_request_headers(user_data: dict) -> dict:
     raise HTTPException(status_code=403, detail="Unsupported authentication method.")
 
 
-async def _is_staff_user(user_data: dict) -> bool:
+async def _is_staff_user(headers) -> bool:
     """Return whether the current authenticated user is staff in Django."""
-    headers = _get_request_headers(user_data)
 
     async with httpx.AsyncClient() as client:
         try:
@@ -108,7 +107,8 @@ async def authorize_telegram_send_message(user_id: int, user_data: dict) -> None
             detail=f"Telegram credential is not eligible for messaging: {error}",
         )
 
-    if await _is_staff_user(user_data):
+    headers = _get_request_headers(user_data)
+    if await _is_staff_user(headers):
         return None
 
     request_api_key = _get_request_api_key(user_data)
@@ -129,7 +129,8 @@ async def authorize_whatsapp_send_message(
             detail=f"WhatsApp credential is not eligible for messaging: {error}",
         )
 
-    if await _is_staff_user(user_data):
+    headers = _get_request_headers(user_data)
+    if await _is_staff_user(headers):
         return None
 
     request_api_key = _get_request_api_key(user_data)

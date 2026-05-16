@@ -3,12 +3,12 @@ import logging
 import os
 import warnings
 from typing import Optional
-
+from typing import Annotated
 import httpx
 import inngest
 import inngest.fast_api
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
@@ -271,3 +271,76 @@ async def telegram_webhook_health():
         "status": "unhealthy",
         "error": result["message"],
     }
+
+
+# --- WebChat Webhook ---
+
+from integrations.webhook.handlers import handle_webchat_message
+
+
+class WebChatWebhookRequest(BaseModel):
+    user_id: str
+    message: str
+
+
+@app.post("/webhooks/webchat")
+async def webchat_webhook(
+    payload: WebChatWebhookRequest, user_data: dict = Depends(verify_token)
+):
+    """
+    Webhook endpoint for Web Chat.
+    Verified user sends a message, we process it using their token to fetch credentials.
+    """
+    token = user_data.get("token") or user_data.get("api_key")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token in user data")
+
+    # Fire-and-forget processing
+    asyncio.create_task(handle_webchat_message(payload.user_id, payload.message, token))
+
+    return {"status": "received"}
+
+
+# --- Cron Webhook ---
+
+from integrations.cron.handlers import handle_cron_job
+from integrations.send_message_auth import _is_staff_user
+
+
+class CronWebhookRequest(BaseModel):
+    cron_id: str
+    user_id: int
+    prompt: str
+    no_agent: bool = False
+    deliver: str = "pass"
+
+
+@app.post("/webhooks/cron")
+async def cron_webhook(
+    payload: CronWebhookRequest,
+    authorization: Annotated[str | None, Header()] = None
+):
+    """
+    Webhook endpoint for Cron Jobs.
+    Only staff users (system) can trigger this.
+    Waits for the result and returns it to Django.
+    """
+
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing Authorization header.")
+
+    headers = {"Authorization": authorization}
+
+    if not await _is_staff_user(headers):
+        raise HTTPException(status_code=403, detail="Only staff users can trigger cron jobs.")
+
+    # Await the handler directly instead of using fire-and-forget
+    result = await handle_cron_job(
+        payload.cron_id,
+        payload.user_id,
+        payload.prompt,
+        payload.no_agent,
+        payload.deliver,
+    )
+
+    return result

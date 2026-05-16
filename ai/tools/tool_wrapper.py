@@ -21,6 +21,31 @@
 # from ai.tools.crm_depricated.people import (
 #     update_person as _update_person,
 # )
+# Cron wrappers
+from ai.tools.cron.tools import (
+    create_cron_job as _create_cron_job,
+)
+from ai.tools.cron.tools import (
+    delete_cron_job as _delete_cron_job,
+)
+from ai.tools.cron.tools import (
+    get_cron_job as _get_cron_job,
+)
+from ai.tools.cron.tools import (
+    list_cron_jobs as _list_cron_jobs,
+)
+from ai.tools.cron.tools import (
+    pause_cron_job as _pause_cron_job,
+)
+from ai.tools.cron.tools import (
+    resume_cron_job as _resume_cron_job,
+)
+from ai.tools.cron.tools import (
+    trigger_cron_job as _trigger_cron_job,
+)
+from ai.tools.cron.tools import (
+    update_cron_job as _update_cron_job,
+)
 from ai.tools.tool_utils import wrap_with_api_key
 
 # list_people = wrap_with_api_key(_list_people)
@@ -116,3 +141,13 @@ from ai.tools.usr.prefrence import (
 )
 
 manage_user_profile = wrap_with_api_key(_manage_user_profile)
+
+
+list_cron_jobs = wrap_with_api_key(_list_cron_jobs)
+get_cron_job = wrap_with_api_key(_get_cron_job)
+create_cron_job = wrap_with_api_key(_create_cron_job)
+update_cron_job = wrap_with_api_key(_update_cron_job)
+delete_cron_job = wrap_with_api_key(_delete_cron_job)
+pause_cron_job = wrap_with_api_key(_pause_cron_job)
+resume_cron_job = wrap_with_api_key(_resume_cron_job)
+trigger_cron_job = wrap_with_api_key(_trigger_cron_job)
